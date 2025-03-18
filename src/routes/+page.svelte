@@ -3,7 +3,7 @@
 	import { scaledDraw } from '$lib/scaledDraw.js';
 	import { linear } from 'svelte/easing';
 
-	let text = $state('Kelsey Cuna');
+	let text = $state('mgngzr');
 	let singlePath = $state(true);
 	let phoneticSubstitute = $state(true);
 	let letterStemFirst = $state(false);
@@ -45,7 +45,6 @@
 			d={path}
 			in:scaledDraw={{ duration: text.length * (singlePath ? 400 : 1000), easing: linear }}
 		></path>
-		<!-- <path d={oghamSVG[0]} stroke-dasharray={oghamSVG[1]} stroke-dashoffset={oghamSVG[1]}></path> -->
 	{/key}
 </svg>
 

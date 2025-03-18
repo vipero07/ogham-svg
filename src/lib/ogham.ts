@@ -9,6 +9,50 @@ type OghamLetters = OghamBGroup | OghamHGroup | OghamMGroup | OghamAGroup | Ogha
 
 type StrokeCount = 1 | 2 | 3 | 4 | 5;
 
+const enum Stroke {
+    right = 0,
+    left = 1,
+    notch = 2,
+    across = 3,
+    space = 4,
+}
+
+const Strokes = ['h2h-2', 'h-2h2', 'h-1h2h-1', 'l-2 -.5 4 1 -2 -.5', 'v-1'];
+
+const Ogham = new Map<OghamLetters, [stroke: Stroke, count: StrokeCount, height?: number]>(
+    [
+        [' ', [Stroke.space, 1, 2]],
+
+        ['b', [Stroke.right, 1]],
+        ['l', [Stroke.right, 2]],
+        ['v', [Stroke.right, 3]],
+        ['f', [Stroke.right, 3]],
+        ['s', [Stroke.right, 4]],
+        ['n', [Stroke.right, 5]],
+
+        ['h', [Stroke.left, 1]],
+        ['d', [Stroke.left, 2]],
+        ['t', [Stroke.left, 3]],
+        ['c', [Stroke.left, 4]],
+        ['k', [Stroke.left, 4]],
+        ['q', [Stroke.left, 5]],
+        ['qu', [Stroke.left, 5]],
+        ['qw', [Stroke.left, 5]],
+
+        ['m', [Stroke.across, 1, .5]],
+        ['g', [Stroke.across, 2, .75]],
+        ['ng', [Stroke.across, 3, 1]],
+        ['z', [Stroke.across, 4, 1.25]],
+        ['r', [Stroke.across, 5, 1.5]],
+
+        ['a', [Stroke.notch, 1]],
+        ['o', [Stroke.notch, 2]],
+        ['u', [Stroke.notch, 3]],
+        ['e', [Stroke.notch, 4]],
+        ['i', [Stroke.notch, 5]],
+    ]
+)
+
 const RightStrokes = new Map<OghamLetters, StrokeCount>(
     [
         ['b', 1],
@@ -58,7 +102,7 @@ const Notches = new Map<OghamLetters, StrokeCount>(
 const LetterSubstitutions = new Map<OghamMissingLetters, OghamLetters | OghamLetters[]>(
     [
         ['j', ['i', 'o']],
-        ['w', 'u'],
+        ['w', 'v'],
         ['y', 'i'],
         ['p', 'b'], // not happy with this, there is no plosive
         ['x', ['k', 's']],
@@ -88,36 +132,17 @@ function drawMultiPath(letter: OghamLetters): [string, number, number] {
     return [`v-${verticalStrokes}m${startX} ${initialStroke}${additionalStokes}${finalPosition}`, verticalStrokes + (totalStrokes * (isAcross ? 4 : 2)), verticalStrokes];
 }
 
-function getStroke(letter: OghamLetters): string {
-    if (AcrossStrokes.has(letter)) {
-        return 'l-2 -1 4 2 -2 -1';
-    }
-    if (RightStrokes.has(letter)) {
-        return 'h0h2h-2';
-    }
-    if (Notches.has(letter)) {
-        return 'h-1h2h-1';
-    }
-    if (LeftStrokes.has(letter)) {
-        return 'h-2h2';
-    }
-    return '';
-}
-
 function drawSinglePath({ letterStemFirst = true }: { letterStemFirst?: boolean }) {
     return function drawSinglePath(letter: OghamLetters): [string, number, number] {
-        if (letter === ' ') {
-            return ['v-2', 2, 2];
-        }
-        const totalStrokes = getLetterStrokes(letter);
-        if (!totalStrokes) {
+        const stroke = Ogham.get(letter);
+        if (!stroke) {
             return ['', 0, 0];
         }
-        const verticalStrokes = totalStrokes + 1;
-        const isAcross = AcrossStrokes.has(letter);
-        const horizontalStroke = `${getStroke(letter)}v-1`;
-        const strokes = Array.from({ length: totalStrokes }).map(() => horizontalStroke).join('');
-        return [`v-${letterStemFirst ? `${verticalStrokes}v${totalStrokes}` : 1}${strokes}`, verticalStrokes + (totalStrokes * (isAcross ? 4 : 2)), verticalStrokes]
+        const height = stroke[2] ?? stroke[1];
+        const isAccross = stroke[0] === Stroke.across;
+        const startStroke = letterStemFirst ? `v-${height}v${height}` : isAccross? 'v-.5': 'v-1';
+        const strokes = Array.from({ length: stroke[1] }).map(() => Strokes[stroke[0]]).join(isAccross? 'v-.5' :'v-1');
+        return [`${startStroke}${strokes}${isAccross? 'v-.5': 'v-1'}`, stroke[1], height+1];
     }
 }
 
@@ -138,10 +163,10 @@ export function splitLetters(word: string, phoneticSubstitute: boolean) {
 
 export function WordToOghamSVG(word: string, { startingX = 2, phoneticSubstitute = true, singlePath = true, letterStemFirst = true, wordStemFirst = false }: { startingX?: number, phoneticSubstitute?: boolean, singlePath?: boolean, letterStemFirst?: boolean, wordStemFirst?: boolean }): [path: string, length: number, height: number] {
     const letters = splitLetters(word, phoneticSubstitute);
-    const pathFunction = singlePath ? drawSinglePath({letterStemFirst}) : drawMultiPath;
+    const pathFunction = singlePath ? drawSinglePath({ letterStemFirst }) : drawMultiPath;
     const [path, length, height] = letters.map(pathFunction).reduce(([path, length, height], [p, l, h]) => {
         return [`${path}${p}`, length + l, height + h] as [string, number, number];
     }, ['', 0, 0] as [string, number, number]);
 
-    return [`${wordStemFirst && singlePath? `M${startingX} ${height}v-${height}` : `M${startingX}`} ${height}${path}`, length, height] as const;
+    return [`${wordStemFirst && singlePath ? `M${startingX} ${height}v-${height}` : `M${startingX}`} ${height}${path}`, length, height] as const;
 }
