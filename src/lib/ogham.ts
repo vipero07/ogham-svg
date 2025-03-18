@@ -104,7 +104,7 @@ function getStroke(letter: OghamLetters): string {
     return '';
 }
 
-function drawSinglePath({ stemFirst = true }: { stemFirst?: boolean }) {
+function drawSinglePath({ letterStemFirst = true }: { letterStemFirst?: boolean }) {
     return function drawSinglePath(letter: OghamLetters): [string, number, number] {
         if (letter === ' ') {
             return ['v-2', 2, 2];
@@ -117,7 +117,7 @@ function drawSinglePath({ stemFirst = true }: { stemFirst?: boolean }) {
         const isAcross = AcrossStrokes.has(letter);
         const horizontalStroke = `${getStroke(letter)}v-1`;
         const strokes = Array.from({ length: totalStrokes }).map(() => horizontalStroke).join('');
-        return [`v-${stemFirst ? `${verticalStrokes}v${totalStrokes}` : 1}${strokes}`, verticalStrokes + (totalStrokes * (isAcross ? 4 : 2)), verticalStrokes]
+        return [`v-${letterStemFirst ? `${verticalStrokes}v${totalStrokes}` : 1}${strokes}`, verticalStrokes + (totalStrokes * (isAcross ? 4 : 2)), verticalStrokes]
     }
 }
 
@@ -136,12 +136,12 @@ export function splitLetters(word: string, phoneticSubstitute: boolean) {
     return phoneticSubstitute ? letters.flatMap(SubstituteMissingLetters) : letters;
 }
 
-export function WordToOghamSVG(word: string, { startingX = 2, phoneticSubstitute = true, singlePath = true, stemFirst = true }: { startingX?: number, phoneticSubstitute?: boolean, singlePath?: boolean, stemFirst?: boolean }): [path: string, length: number, height: number] {
+export function WordToOghamSVG(word: string, { startingX = 2, phoneticSubstitute = true, singlePath = true, letterStemFirst = true, wordStemFirst = false }: { startingX?: number, phoneticSubstitute?: boolean, singlePath?: boolean, letterStemFirst?: boolean, wordStemFirst?: boolean }): [path: string, length: number, height: number] {
     const letters = splitLetters(word, phoneticSubstitute);
-    const pathFunction = singlePath ? drawSinglePath({stemFirst}) : drawMultiPath;
+    const pathFunction = singlePath ? drawSinglePath({letterStemFirst}) : drawMultiPath;
     const [path, length, height] = letters.map(pathFunction).reduce(([path, length, height], [p, l, h]) => {
         return [`${path}${p}`, length + l, height + h] as [string, number, number];
     }, ['', 0, 0] as [string, number, number]);
 
-    return [`M${startingX} ${height}${path}`, length, height] as const;
+    return [`${wordStemFirst && singlePath? `M${startingX} ${height}v-${height}` : `M${startingX}`} ${height}${path}`, length, height] as const;
 }
