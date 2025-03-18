@@ -1,3 +1,42 @@
-<h1>Welcome to your library project</h1>
-<p>Create your package using @sveltejs/package and preview/showcase your work with SvelteKit</p>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<script lang="ts">
+	import { splitLetters, WordToOghamSVG } from '$lib/ogham.js';
+	import { draw } from 'svelte/transition';
+
+	let text = $state('kelsey wolf');
+	const oghamSVG = $derived(WordToOghamSVG(text));
+	const strokes = $derived(splitLetters(text, true));
+</script>
+
+<input bind:value={text} />
+<div>
+	{strokes}
+</div>
+<svg
+	viewBox="0 0 4 {oghamSVG[2]}"
+    preserveAspectRatio="none"
+>
+    {#key oghamSVG}
+	    <path in:draw d={oghamSVG[0]}></path>
+    {/key}
+</svg>
+
+<style>
+	input {
+		border: solid black 2px;
+	}
+	svg {
+        position: absolute;
+		height: 50vh;
+		overflow: visible;
+	}
+    path{
+        stroke: black;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        stroke-width: 2px;
+        fill: none;
+    }
+	svg * {
+		vector-effect: non-scaling-stroke;
+	}
+</style>
