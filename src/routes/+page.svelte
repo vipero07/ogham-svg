@@ -54,7 +54,7 @@
 	}
 	svg {
 		position: absolute;
-		height: 50vh;
+		width: 4rem;
 		overflow: visible;
 	}
 	path {
